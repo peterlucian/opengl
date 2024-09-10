@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build opengl",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-I${workspaceFolder}/glad",
+                "-I${workspaceFolder}/include", // Include path for your custom headers
+                "-g",
+                "${workspaceFolder}/glad/*.c",
+                "${workspaceFolder}/*.cpp",
+                "-o", 
+                "${fileDirname}/${fileBasenameNoExtension}", // Output binary location
+                "-lglfw",                       // Link GLFW library
+                "-lGL",                         // Link OpenGL library
+                //"-ldl"                        // Link dynamic linking loader     
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+             "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": ["$gcc"],
+            "detail": "Generated task to build the project."
+        }
+    ]
+}
