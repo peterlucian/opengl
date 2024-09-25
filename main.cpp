@@ -1,6 +1,10 @@
 
 #include "glad/glad.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 #include <GLFW/glfw3.h>
+
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
@@ -17,8 +21,14 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 //void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 640;
+const unsigned int SCR_HEIGHT = 480;
+
+const unsigned int GRID_SIZE_X = 5;
+const unsigned int GRID_SIZE_Y = 5;
+const float cellWidth = 1.0f;
+const float cellHeight = 1.0f;
+
 
 int main()
 {
@@ -60,11 +70,11 @@ int main()
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
         float vertices[] = {
-            -0.5f, -0.5f, 0.0f, 0.0f, // left  
-            0.5f, -0.5f,  1.0f, 0.0f, // right 
-            0.5f,  0.5f,  1.0f, 1.0f, // top  
-            -0.5f,  0.5f, 0.0f, 1.0f
-        }; 
+            -2.5f, -2.5f,   0.0f, 0.0f, // left  
+             -1.5f, -2.5f,   1.0f, 0.0f, // right 
+             -1.5f,  -1.5f,   1.0f, 1.0f, // top  
+            -2.5f,  -1.5f,   0.0f, 1.0f
+        };
         
         //  float vertices[] = {
         //     -0.5f, -0.5f, // left  
@@ -95,16 +105,39 @@ int main()
         layout.Push<float>(2);
         layout.Push<float>(2);
         va.AddBuffer(vb, layout);
-        
+
         IndexBuffer ibo(indices, 6);
 
+       
+        //glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f);
+        glm::mat4 proj = glm::ortho(-2.5f, 2.5f, -2.5f, 2.5f, -1.0f, 1.0f);
+
         Shader shader("basic.shader");
-        shader.SetUniform4f("u_Color", 1.0f, 0.5f, 0.2f, 1.0f);
+        //shader.SetUniform4f("u_Color", 1.0f, 0.5f, 0.2f, 1.0f);
+        
 
         Texture texture("pngegg.png");
         texture.Bind();
         shader.SetUniform1i("u_Texture", 0);
 
+
+        glm::vec2 offsets[GRID_SIZE_X * GRID_SIZE_Y];
+        
+        for (int y = 0; y < GRID_SIZE_Y; y++) {
+            for (int x = 0; x < GRID_SIZE_X; x++) {
+                offsets[y * GRID_SIZE_X + x] = glm::vec2(x * cellWidth, y * cellHeight);  // Position each cell in the grid
+            }
+        }
+
+        VertexBuffer instancedVBO ( offsets, GRID_SIZE_X * GRID_SIZE_Y * 2 * sizeof(float) );
+        // Now, bind it to the quad VAO
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glVertexAttribDivisor(2, 1); // Tell OpenGL this is an instanced attribute
+        glBindVertexArray(0);
+
+        shader.Bind();
+        shader.SetUniformMat4f("u_MVP", proj);
         // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
         // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
         // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
@@ -128,17 +161,17 @@ int main()
             // ------
             renderer.Clear();
 
-            shader.SetUniform4f("u_Color", r, 0.5f, 0.2f, 1.0f);
+            //shader.SetUniform4f("u_Color", r, 0.5f, 0.2f, 1.0f);
             // draw our first triangle
             
             renderer.Draw(va, ibo, shader);
 
-            if (r > 1.0f)
-                increment = -0.05f;
-            else if (r < 0.0f)
-                increment = 0.05f;
+            // if (r > 1.0f)
+            //     increment = -0.05f;
+            // else if (r < 0.0f)
+            //     increment = 0.05f;
 
-            r += increment;
+            // r += increment;
             // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
             // -------------------------------------------------------------------------------
             glfwSwapBuffers(window);
