@@ -22,12 +22,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 // settings
 const unsigned int SCR_WIDTH = 640;
-const unsigned int SCR_HEIGHT = 480;
+const unsigned int SCR_HEIGHT = 640;
 
-const unsigned int GRID_SIZE_X = 5;
-const unsigned int GRID_SIZE_Y = 5;
-const float cellWidth = 1.0f;
-const float cellHeight = 1.0f;
+const unsigned int GRID_SIZE_X = 10;
+const unsigned int GRID_SIZE_Y = 10;
+const float cellWidth = 50.0f;
+const float cellHeight = 50.0f;
 
 
 int main()
@@ -69,11 +69,18 @@ int main()
         
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
-        float vertices[] = {
-            -2.5f, -2.5f,   0.0f, 0.0f, // left  
-             -1.5f, -2.5f,   1.0f, 0.0f, // right 
-             -1.5f,  -1.5f,   1.0f, 1.0f, // top  
-            -2.5f,  -1.5f,   0.0f, 1.0f
+        // float vertices[] = {
+        //     -2.5f, -2.5f,   0.0f, 0.0f, // left  
+        //      -1.5f, -2.5f,   1.0f, 0.0f, // right 
+        //      -1.5f,  -1.5f,   1.0f, 1.0f, // top  
+        //     -2.5f,  -1.5f,   0.0f, 1.0f
+        // };
+
+          float vertices[] = {
+            -250.0f,  -250.0f,   0.0f, 0.0f, // left  
+            -200.0f,  -250.0f,   1.0f, 0.0f, // right 
+            -200.0f,  -200.0f,   1.0f, 1.0f, // top  
+            -250.0f,  -200.0f,   0.0f, 1.0f
         };
         
         //  float vertices[] = {
@@ -110,7 +117,7 @@ int main()
 
        
         //glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f);
-        glm::mat4 proj = glm::ortho(-2.5f, 2.5f, -2.5f, 2.5f, -1.0f, 1.0f);
+        glm::mat4 proj = glm::ortho(-320.0f, 320.0f, -320.0f, 320.0f, -1.0f, 1.0f);
 
         Shader shader("basic.shader");
         //shader.SetUniform4f("u_Color", 1.0f, 0.5f, 0.2f, 1.0f);
