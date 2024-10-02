@@ -16,6 +16,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <cmath>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 //void processInput(GLFWwindow *window);
@@ -24,11 +25,107 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 const unsigned int SCR_WIDTH = 640;
 const unsigned int SCR_HEIGHT = 640;
 
-const unsigned int GRID_SIZE_X = 10;
-const unsigned int GRID_SIZE_Y = 10;
+const unsigned int GRID_WIDTH = 10;
+const unsigned int GRID_HEIGHT = 10;
 const float cellWidth = 50.0f;
 const float cellHeight = 50.0f;
 
+enum CellState {
+    HIDDEN,
+    REVEALED,
+    MEME,
+    FLAGGED
+};
+
+struct Cell {
+    CellState state = CellState::HIDDEN;
+    bool isMeme = false;  // Whether this cell contains a meme
+    int neighboringMemeCount = 0;  // Number of memes in adjacent cells
+};
+
+Cell grid[GRID_HEIGHT][GRID_WIDTH];
+
+void calculateMemeCounts() {
+    // Directions for the 8 neighboring cells
+    const int dx[] = {-1, -1, -1,  0, 0, 1, 1, 1};
+    const int dy[] = {-1,  0,  1, -1, 1, -1, 0, 1};
+
+    for (int y = 0; y < GRID_HEIGHT; ++y) {
+        for (int x = 0; x < GRID_WIDTH; ++x) {
+            // Skip cells that are memes
+            if (grid[y][x].isMeme) continue;
+
+            // Check the 8 neighboring cells
+            for (int i = 0; i < 8; ++i) {
+                int nx = x + dx[i];
+                int ny = y + dy[i];
+
+                // Ensure the neighbor is within the grid bounds
+                if (nx >= 0 && nx < GRID_WIDTH && ny >= 0 && ny < GRID_HEIGHT) {
+                    if (grid[ny][nx].isMeme) {
+                        grid[y][x].neighboringMemeCount++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void placeMemes(int numMemes) {
+    int placedMemes = 0;
+    while (placedMemes < numMemes) {
+        int x = rand() % GRID_WIDTH;
+        int y = rand() % GRID_HEIGHT;
+
+        // If there's no meme at this position, place one
+        if (!grid[y][x].isMeme) {
+            grid[y][x].isMeme = true;
+            placedMemes++;
+        }
+    }
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+     if (action == GLFW_PRESS) {
+        double xpos, ypos;
+        // Get the mouse position
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        // Define constants
+        int cell_size = 50;          // Actual cell size
+        int grid_size = 500;         // 10x10 grid with 50x50 cells
+        int window_size = 640;       // Window size
+        int offset = (window_size - grid_size) / 2;  // Offset for centering (70 pixels)
+
+        // Invert the y-coordinate
+        ypos = window_size - ypos;
+
+        // Adjust for the offset
+        xpos -= offset;
+        ypos -= offset;
+
+        // Calculate the grid cell based on mouse position
+        int grid_x = static_cast<int>(std::round(xpos)) / cell_size;
+        int grid_y = static_cast<int>(std::round(ypos)) / cell_size;
+
+        // Ensure the click is within the grid bounds
+        if (xpos >= 0 && xpos < grid_size && ypos >= 0 && ypos < grid_size) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                std::cout << "Left mouse button pressed at (" << xpos << ", " << ypos << ")" << std::endl;
+                grid[grid_y][grid_x].state = CellState::FLAGGED;
+            }
+            if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                std::cout << "Right mouse button pressed at (" << xpos << ", " << ypos << ")" << std::endl;
+                if(grid[grid_y][grid_x].isMeme)
+                    grid[grid_y][grid_x].state = CellState::MEME;
+                else if (!grid[grid_y][grid_x].isMeme)
+                    grid[grid_y][grid_x].state = CellState::REVEALED;
+            }
+        } else {
+            std::cout << "Click was outside the grid." << std::endl;
+        }
+    }
+}
 
 int main()
 {
@@ -56,6 +153,9 @@ int main()
     glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    // Set the mouse button callback
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
     // glad: load all OpenGL function pointers
     // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -67,28 +167,26 @@ int main()
     {
 
         
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        // float vertices[] = {
-        //     -2.5f, -2.5f,   0.0f, 0.0f, // left  
-        //      -1.5f, -2.5f,   1.0f, 0.0f, // right 
-        //      -1.5f,  -1.5f,   1.0f, 1.0f, // top  
-        //     -2.5f,  -1.5f,   0.0f, 1.0f
-        // };
+        placeMemes(10);
+        calculateMemeCounts();
 
-          float vertices[] = {
+        for (size_t y = 0; y < GRID_HEIGHT; y++)
+        {
+            for (size_t x = 0; x < GRID_WIDTH; x++)
+            {
+                std::cout << " grid cell [ " << y << ", " << x << " ] " << grid[y][x].neighboringMemeCount << ", "<< grid[y][x].isMeme << std::endl;
+            }
+            
+        }
+        
+        float vertices[] = {
             -250.0f,  -250.0f,   0.0f, 0.0f, // left  
             -200.0f,  -250.0f,   1.0f, 0.0f, // right 
             -200.0f,  -200.0f,   1.0f, 1.0f, // top  
             -250.0f,  -200.0f,   0.0f, 1.0f
         };
         
-        //  float vertices[] = {
-        //     -0.5f, -0.5f, // left  
-        //     0.5f, -0.5f,   // right 
-        //     0.5f,  0.5f,   // top  
-        //     -0.5f,  0.5f
-        // }; 
+      
 
 
         unsigned int indices[]= {
@@ -128,20 +226,20 @@ int main()
         shader.SetUniform1i("u_Texture", 0);
 
 
-        glm::vec2 offsets[GRID_SIZE_X * GRID_SIZE_Y];
+        glm::vec2 offsets[GRID_WIDTH * GRID_HEIGHT];
         
-        for (int y = 0; y < GRID_SIZE_Y; y++) {
-            for (int x = 0; x < GRID_SIZE_X; x++) {
-                offsets[y * GRID_SIZE_X + x] = glm::vec2(x * cellWidth, y * cellHeight);  // Position each cell in the grid
+        for (int y = 0; y < GRID_HEIGHT; y++) {
+            for (int x = 0; x < GRID_WIDTH; x++) {
+                offsets[y * GRID_WIDTH + x] = glm::vec2(x * cellWidth, y * cellHeight);  // Position each cell in the grid
             }
         }
 
-        VertexBuffer instancedVBO ( offsets, GRID_SIZE_X * GRID_SIZE_Y * 2 * sizeof(float) );
-        // Now, bind it to the quad VAO
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-        glVertexAttribDivisor(2, 1); // Tell OpenGL this is an instanced attribute
-        glBindVertexArray(0);
+        // VertexBuffer instancedVBO ( offsets, GRID_HEIGHT * GRID_WIDTH * 2 * sizeof(float) );
+        // // Now, bind it to the quad VAO
+        // glEnableVertexAttribArray(2);
+        // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        // glVertexAttribDivisor(2, 1); // Tell OpenGL this is an instanced attribute
+        // glBindVertexArray(0);
 
         shader.Bind();
         shader.SetUniformMat4f("u_MVP", proj);
@@ -163,15 +261,56 @@ int main()
             // input
             // -----
             //processInput(window);
-
             // render
             // ------
             renderer.Clear();
+            
+            shader.Bind();
+            texture.Unbind();
+
+            for (int y = 0; y < GRID_HEIGHT; ++y) {
+                for (int x = 0; x < GRID_WIDTH; ++x) {
+                    Cell &cell = grid[y][x];
+
+                    // Set the texture based on the cell state
+                    switch (cell.state) {
+                        case HIDDEN:
+                            break;
+                        case REVEALED:
+                            texture.Bind();
+                            break;
+                        case MEME:
+                            texture.Bind();
+                            break;
+                        case FLAGGED:
+                            texture.Bind();
+                            break;
+                    }
+
+                    glm::vec2 offset = offsets[y * GRID_WIDTH + x];
+
+                    
+                    VertexBuffer instuniqueVBO ( &offset, 2 * sizeof(float) );
+                    // Now, bind it to the quad VAO
+                    glEnableVertexAttribArray(2);
+                    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+                    glVertexAttribDivisor(2, 1); // Tell OpenGL this is an instanced attribute
+                   
+
+                    // Draw the quad at its position (set via instanced rendering with offsets)
+                    //glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1); // Draw 1 instance
+                    renderer.Draw(va, ibo, shader);
+
+                    texture.Unbind();
+                }
+            }
+
+          
 
             //shader.SetUniform4f("u_Color", r, 0.5f, 0.2f, 1.0f);
             // draw our first triangle
             
-            renderer.Draw(va, ibo, shader);
+            //renderer.Draw(va, ibo, shader);
 
             // if (r > 1.0f)
             //     increment = -0.05f;
