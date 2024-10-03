@@ -222,7 +222,10 @@ int main()
         
 
         Texture texture("pngegg.png");
-        texture.Bind();
+        Texture hidden ("res/hidden.png");
+        Texture flag ("res/flag.png");
+        Texture mine ("res/mine.png");
+        
         shader.SetUniform1i("u_Texture", 0);
 
 
@@ -275,15 +278,16 @@ int main()
                     // Set the texture based on the cell state
                     switch (cell.state) {
                         case HIDDEN:
+                            hidden.Bind();
                             break;
                         case REVEALED:
                             texture.Bind();
                             break;
                         case MEME:
-                            texture.Bind();
+                            mine.Bind();
                             break;
                         case FLAGGED:
-                            texture.Bind();
+                            flag.Bind();
                             break;
                     }
 
@@ -302,6 +306,10 @@ int main()
                     renderer.Draw(va, ibo, shader);
 
                     texture.Unbind();
+
+                    hidden.Unbind();
+                    flag.Unbind();
+                    mine.Unbind();
                 }
             }
 
