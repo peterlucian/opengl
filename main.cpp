@@ -221,10 +221,22 @@ int main()
         //shader.SetUniform4f("u_Color", 1.0f, 0.5f, 0.2f, 1.0f);
         
 
-        Texture texture("pngegg.png");
+        //Texture texture("pngegg.png");
         Texture hidden ("res/hidden.png");
         Texture flag ("res/flag.png");
         Texture mine ("res/mine.png");
+
+        Texture textures[9] = {
+            Texture("res/zero.png"), // For 0 adjacent memes
+            Texture("res/one.png"), // For 1 adjacent meme
+            Texture("res/two.png"), // For 2 adjacent memes
+            Texture("res/three.png"), // For 3 adjacent memes
+            Texture("res/four.png"), // For 4 adjacent memes
+            Texture("res/five.png"), // For 5 adjacent memes
+            Texture("res/six.png"), // For 6 adjacent memes
+            Texture("res/seven.png"), // For 7 adjacent memes
+            Texture("res/eight.png")  // For 8 adjacent memes
+        };
         
         shader.SetUniform1i("u_Texture", 0);
 
@@ -269,7 +281,7 @@ int main()
             renderer.Clear();
             
             shader.Bind();
-            texture.Unbind();
+            
 
             for (int y = 0; y < GRID_HEIGHT; ++y) {
                 for (int x = 0; x < GRID_WIDTH; ++x) {
@@ -281,7 +293,7 @@ int main()
                             hidden.Bind();
                             break;
                         case REVEALED:
-                            texture.Bind();
+                            textures[cell.neighboringMemeCount].Bind();
                             break;
                         case MEME:
                             mine.Bind();
@@ -305,8 +317,8 @@ int main()
                     //glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1); // Draw 1 instance
                     renderer.Draw(va, ibo, shader);
 
-                    texture.Unbind();
-
+                    
+                    textures[cell.neighboringMemeCount].Unbind();
                     hidden.Unbind();
                     flag.Unbind();
                     mine.Unbind();
