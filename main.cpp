@@ -17,6 +17,8 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <cstdlib>     /* srand, rand */
+#include <ctime>
 #include <queue>
 #include <utility>
 
@@ -76,9 +78,10 @@ void calculateMemeCounts() {
 
 void placeMemes(int numMemes) {
     int placedMemes = 0;
+    std::srand(std::time(nullptr));
     while (placedMemes < numMemes) {
-        int x = rand() % GRID_WIDTH;
-        int y = rand() % GRID_HEIGHT;
+        int x = std::rand() % GRID_WIDTH;
+        int y = std::rand() % GRID_HEIGHT;
 
         // If there's no meme at this position, place one
         if (!grid[y][x].isMeme) {
@@ -119,7 +122,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             // Use a flood-fill algorithm to reveal a "safe" area
             
             // Check if the starting position is safe
-            if (grid[grid_y][grid_x].isMeme || grid[grid_y][grid_x].neighboringMemeCount != 0) {
+            if (grid[grid_y][grid_x].isMeme) {
                 // In some versions of Minesweeper, the game would reposition the meme if you click on one first
                 // You can handle this however you'd like.
                 return; // Or reposition the meme at this point
@@ -157,10 +160,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
                         }
                     }
 
+                    firstClick = true;
+
                 }
             }
             
-            firstClick = true;
+            
 
         } else {
             // Ensure the click is within the grid bounds
