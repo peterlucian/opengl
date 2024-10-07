@@ -17,6 +17,8 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <queue>
+#include <utility>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 //void processInput(GLFWwindow *window);
@@ -44,6 +46,7 @@ struct Cell {
 };
 
 Cell grid[GRID_HEIGHT][GRID_WIDTH];
+bool firstClick = false;
 
 void calculateMemeCounts() {
     // Directions for the 8 neighboring cells
@@ -107,23 +110,77 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         // Calculate the grid cell based on mouse position
         int grid_x = static_cast<int>(std::round(xpos)) / cell_size;
         int grid_y = static_cast<int>(std::round(ypos)) / cell_size;
+        
+        // The grid is assumed to be a 2D array of Cells, where each Cell has a boolean isRevealed and isMeme.
 
-        // Ensure the click is within the grid bounds
-        if (xpos >= 0 && xpos < grid_size && ypos >= 0 && ypos < grid_size) {
-            if (button == GLFW_MOUSE_BUTTON_LEFT) {
-                std::cout << "Left mouse button pressed at (" << xpos << ", " << ypos << ")" << std::endl;
-                grid[grid_y][grid_x].state = CellState::FLAGGED;
+        
+
+        if(!firstClick){
+            // Use a flood-fill algorithm to reveal a "safe" area
+            
+            // Check if the starting position is safe
+            if (grid[grid_y][grid_x].isMeme || grid[grid_y][grid_x].neighboringMemeCount != 0) {
+                // In some versions of Minesweeper, the game would reposition the meme if you click on one first
+                // You can handle this however you'd like.
+                return; // Or reposition the meme at this point
             }
-            if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-                std::cout << "Right mouse button pressed at (" << xpos << ", " << ypos << ")" << std::endl;
-                if(grid[grid_y][grid_x].isMeme)
-                    grid[grid_y][grid_x].state = CellState::MEME;
-                else if (!grid[grid_y][grid_x].isMeme)
-                    grid[grid_y][grid_x].state = CellState::REVEALED;
+
+            // Use a queue for breadth-first search (BFS) to reveal neighboring squares
+            std::queue<std::pair<int, int>> toReveal;
+            toReveal.push({grid_x, grid_y});
+
+            while (!toReveal.empty()) {
+                auto [x, y] = toReveal.front();
+                toReveal.pop();
+
+                // Check bounds
+                if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT)
+                    continue;
+
+                // If the cell is already revealed or is a meme, skip it
+                if (grid[y][x].state == CellState::REVEALED || grid[y][x].isMeme)
+                    continue;
+
+                // Reveal the cell
+                grid[y][x].state = CellState::REVEALED;
+
+                // Count neighboring memes
+                int memeCount = grid[y][x].neighboringMemeCount;
+
+                // If no adjacent memes, reveal neighbors
+                if (memeCount == 0) {
+                    // Add neighboring cells to the queue
+                    for (int offsetY = -1; offsetY <= 1; ++offsetY) {
+                        for (int offsetX = -1; offsetX <= 1; ++offsetX) {
+                            if (offsetX == 0 && offsetY == 0) continue;  // Skip the current cell
+                            toReveal.push({x + offsetX, y + offsetY});
+                        }
+                    }
+
+                }
             }
+            
+            firstClick = true;
+
         } else {
-            std::cout << "Click was outside the grid." << std::endl;
+            // Ensure the click is within the grid bounds
+            if (xpos >= 0 && xpos < grid_size && ypos >= 0 && ypos < grid_size) {
+                if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                    std::cout << "Left mouse button pressed at (" << xpos << ", " << ypos << ")" << std::endl;
+                    grid[grid_y][grid_x].state = CellState::FLAGGED;
+                }
+                if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                    std::cout << "Right mouse button pressed at (" << xpos << ", " << ypos << ")" << std::endl;
+                    if(grid[grid_y][grid_x].isMeme)
+                        grid[grid_y][grid_x].state = CellState::MEME;
+                    else if (!grid[grid_y][grid_x].isMeme)
+                        grid[grid_y][grid_x].state = CellState::REVEALED;
+                }
+            } else {
+                std::cout << "Click was outside the grid." << std::endl;
+            }
         }
+
     }
 }
 
